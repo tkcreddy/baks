@@ -40,17 +40,57 @@ class AwsInterface:
 
         instance_id = response['Instances'][0]['InstanceId']
         print(f"EC2 instance created with ID: {instance_id}")
-    @log_to_file
-    def get_ec2s_information(self) -> str:
+    @log_to_file(logger)
+    def get_ec2s_information(self):
+        #print("inside the function")
+        try:
+            instances = []
+            paginator = self.ec2_client.get_paginator('describe_instances')
+
+            # Use paginator to iterate over all pages
+            for page in paginator.paginate():
+                for reservation in page.get('Reservations', []):
+                    for instance in reservation.get('Instances', []):
+                        name_tag = next(
+                            (tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'),
+                            None
+                        )
+                        instance_details = {
+                            "Name": name_tag,
+                            "InstanceID": instance.get('InstanceId'),
+                            "PrivateIpAddress": instance.get('PrivateIpAddress'),
+                            "LaunchTime": instance.get('LaunchTime').strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        instances.append(instance_details)
+        except Exception as err:
+            logging.error(f"Exception getting AWS info "f" {err}")
+            raise
+
+        # Convert the list of instances to JSON format
+        return json.dumps(instances, indent=4, default=str)
+    @log_to_file(logger)
+    def get_ec2_info(self):
         try:
             response = self.ec2_client.describe_instances()
 
             # Convert the response to JSON format and print
             response_json = json.dumps(response, indent=4, default=str)
             print(response_json)
-
         except Exception as err:
-            logging.error(f"Exception getting ec2 info "f" {err}")
+            logging.error(f"Exception getting AWS info "f" {err}")
             raise
-        return response_json
+    @log_to_file(logger)
+    def terminate_ec2_instances(self,instance_ids):
+        try:
+            response = self.ec2_client.terminate_instances(InstanceIds=instance_ids)
+            for instance in response['TerminatingInstances']:
+                print(f"Instance {instance['InstanceId']} is in {instance['CurrentState']['Name']} state.")
+            return response
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    # List of instance IDs to terminate
+
+
+
 

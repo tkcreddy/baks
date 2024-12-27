@@ -6,7 +6,7 @@ import asyncio
 import argparse
 from utils.kafka.producer_kafka import Producer
 from utils.ReadConfig import ReadConfig as rc
-from utils.server_side.SsOsSystemCmd import SsOsSystemCmd as ss
+from server.nodes.SsOsSystemCmd import SsOsSystemCmd as ss
 from logpkg.log_kcld import LogKCld,log_to_file
 logger=LogKCld()
 

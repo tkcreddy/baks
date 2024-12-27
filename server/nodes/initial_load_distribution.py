@@ -1,8 +1,8 @@
 import random
 
 
-def distribute_pods(nodes, applications):
-    """Distributes application varieties across nodes with balanced counts.
+def distribute_pods(nodes, applications) -> list[dict]:
+    """Distributes application varieties across evenly balanced nodes.
 
     Args:
         nodes: The number of nodes (n).
@@ -10,7 +10,7 @@ def distribute_pods(nodes, applications):
 
     Returns:
         A list of dictionaries, where each dictionary represents a node and contains
-        the distributed applications and their quantities. Returns None if input is invalid.
+        the distributed applications and their pod counts. Returns None if input is invalid.
     """
 
     if not isinstance(nodes, int) or nodes <= 0:
@@ -75,3 +75,5 @@ distributed_result = distribute_pods(num_nodes, pods)
 if distributed_result:
     for i, node in enumerate(distributed_result):
         print(f"node {i + 1}: {node} (Total: {sum(node.values())})")
+
+# need to add logic to use coin based greedy algorthm for distributing based on resources
