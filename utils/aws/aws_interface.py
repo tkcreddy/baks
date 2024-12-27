@@ -4,6 +4,7 @@ import time
 from logpkg.log_kcld import LogKCld, log_to_file
 from utils.ReadConfig import ReadConfig as rc
 from utils.singleton import Singleton
+import json
 logger = LogKCld()
 
 class AwsInterface:
@@ -16,7 +17,7 @@ class AwsInterface:
             logging.error(f"Exception initializing AWS Interface "f" {err}")
             raise
     @log_to_file(logger)
-    def create_ec2_instance(self,instance_type, ami_id, key_name, security_group_ids):
+    def create_ec2_instance(self,instance_type, ami_id, key_name, security_group_ids) -> None:
         """
         Creates an EC2 instance using credentials loaded from a YAML file.
 
@@ -39,4 +40,17 @@ class AwsInterface:
 
         instance_id = response['Instances'][0]['InstanceId']
         print(f"EC2 instance created with ID: {instance_id}")
+    @log_to_file
+    def get_ec2s_information(self) -> str:
+        try:
+            response = self.ec2_client.describe_instances()
+
+            # Convert the response to JSON format and print
+            response_json = json.dumps(response, indent=4, default=str)
+            print(response_json)
+
+        except Exception as err:
+            logging.error(f"Exception getting ec2 info "f" {err}")
+            raise
+        return response_json
 

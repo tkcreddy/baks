@@ -16,7 +16,9 @@ def main() ->None:
     aws_config = read_config.aws_config
     print(f"print {aws_config}")
     awsinterface = AwsInterface(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'])
-    awsinterface.create_ec2_instance(instance_type, ami_id, key_name, security_group_ids)
+    #awsinterface.create_ec2_instance(instance_type, ami_id, key_name, security_group_ids)
+    awsinterface.get_ec2s_information()
+
 
 if __name__ == '__main__':
 
