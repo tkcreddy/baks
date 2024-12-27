@@ -1,0 +1,9 @@
+python-dateutil
+asyncio
+aiohttp
+aiokafka
+requests
+kafka-python
+docker
+boto3
+PyYAML
