@@ -1,15 +1,16 @@
 import random
 
+
 def distribute_pods(nodes, applications):
-    """Distributes fruit varieties across nodes with balanced counts.
+    """Distributes application varieties across nodes with balanced counts.
 
     Args:
         nodes: The number of nodes (n).
-        applications: A dictionary where keys are fruit names and values are their quantities.
+        applications: A dictionary where keys are application names and values are their quantities.
 
     Returns:
         A list of dictionaries, where each dictionary represents a node and contains
-        the distributed fruits and their quantities. Returns None if input is invalid.
+        the distributed applications and their quantities. Returns None if input is invalid.
     """
 
     if not isinstance(nodes, int) or nodes <= 0:
@@ -29,12 +30,12 @@ def distribute_pods(nodes, applications):
     if total_pods < nodes:
         print("Warning: There are fewer pods than nodes. Some nodes will be empty or have less variety.")
 
-    # Calculate target number of fruits per node
+    # Calculate target number of applications per node
     target_per_node = total_pods // nodes
     remainder = total_pods % nodes
 
     for i in range(remainder):
-        distributed_nodes[i]["remainder_pod"] = distributed_nodes[i].get("remainder_pod",0)+1
+        distributed_nodes[i]["remainder_pod"] = distributed_nodes[i].get("remainder_pod", 0) + 1
 
     for application, quantity in applications.items():
         if quantity == 0:
@@ -50,16 +51,15 @@ def distribute_pods(nodes, applications):
 
             distributed_nodes[min_node_index][application] = distributed_nodes[min_node_index].get(application, 0) + 1
 
-    #Remove the remainder fruit key.
-    for node in distributed_nodes:
-        if "remainder_pod" in node:
-            del node["remainder_pod"]
-
+    for worker_node in distributed_nodes:
+        if "remainder_pod" in worker_node:
+            del worker_node["remainder_pod"]
 
     return distributed_nodes
 
+
 # Example usage:
-num_nodes = 5
+num_nodes = 8
 pods = {
     "app1": 12,
     "app2": 8,
