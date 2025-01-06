@@ -7,3 +7,5 @@ kafka-python
 docker
 boto3
 PyYAML
+celery
+redis

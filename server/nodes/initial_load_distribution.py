@@ -61,13 +61,7 @@ def distribute_pods(nodes, applications) -> list[dict]:
 # Example usage:
 num_nodes = 8
 pods = {
-    "app1": 12,
-    "app2": 8,
-    "app3": 5,
-    "app4": 3,
-    "app5": 0,
-    "app6": 12,
-    "app7": 20
+    "apps1": 5
 }
 
 distributed_result = distribute_pods(num_nodes, pods)
