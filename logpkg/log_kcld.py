@@ -11,7 +11,7 @@ class _LogKCld(object):
     log_file = logging_config['file_path']
     log_level = logging_config['level']
 
-    def __init__(self, name="kcld", log_file=log_file, level=log_level):
+    def __init__(self, name="kcld", log_file=log_file, level=log_level) -> None:
         """
         Initializes a Logger object.
 
