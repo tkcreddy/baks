@@ -4,7 +4,7 @@ import random
 def distribute_pods(nodes, applications) -> list[dict]:
     """Distributes application varieties across evenly balanced nodes.
 
-    Args:
+    Arg
         nodes: The number of nodes (n).
         applications: A dictionary where keys are application names and values are their quantities.
 
