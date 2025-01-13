@@ -1,4 +1,5 @@
 import random
+from utils.aws.create_new_worker import CreateNewWorker
 class ClusterWorkerDistribution:
     def __init__(self, worker_nodes: list[dict[str, int]], cluster_infos: dict[str, dict[str, int]]) -> None:
         if not isinstance(worker_nodes, list) or not worker_nodes:
@@ -46,18 +47,36 @@ class ClusterWorkerDistribution:
 
         num_nodes = len(self.worker_nodes)
         distribution = {i: [] for i in range(num_nodes)}
+        total_worker_cpu=0
+        total_worker_memory=0
+        total_cpu_per_cluster={}
+        total_memory_per_cluster = {}
+        # calculating total memory and cpus available across worker nodes
+        total_worker_cpu = sum(self.worker_nodes[i]['cpu'] for i in range(num_nodes))
+        total_worker_memory = sum(self.worker_nodes[i]['memory'] for i in range(num_nodes))
 
-        # Create a list of all microservice instances to distribute
+        # Calculating total CPU and memory required for all the cluster
+        total_cpu_per_cluster = {cluster_info: values['cpu'] * values['instances'] for cluster_info, values in
+                             self.cluster_infos.items()}
+        total_memory_per_cluster = {cluster_info: values['memory'] * values['instances'] for cluster_info, values in
+                                self.cluster_infos.items()}
+        print(total_memory_per_cluster,total_cpu_per_cluster)
+        total_memory_need=sum(total_memory_per_cluster.values())
+        total_cpus_need=sum(total_cpu_per_cluster.values())
+        print(total_worker_cpu,total_worker_memory,total_cpus_need,total_memory_need)
+        # Create a list of all cluster instances to distribute
         all_instances = []
         for cluster_name, requirements in self.cluster_infos.items():
             for instance_num in range(requirements['instances']):
                 all_instances.append((cluster_name, instance_num))
 
         # Sort microservices by their combined resource requirements (descending) to attempt to fit larger services first
-        sorted_instances = sorted(all_instances,
-                                  key=lambda item: self.cluster_infos[item[0]]['cpu'] + self.cluster_infos[item[0]][
-                                      'memory'], reverse=True)
-        # print(sorted_instances)
+        # sorted_instances = sorted(all_instances,
+        #                           key=lambda item: self.cluster_infos[item[0]]['cpu'] + self.cluster_infos[item[0]][
+        #                               'memory'], reverse=True)
+        # Sort cluster by their  combined  resource requirements in descending order.
+        sorted_instances = sorted(all_instances,key=lambda  item: total_cpu_per_cluster[item[0]] + total_memory_per_cluster[item[0]], reverse=True)
+        print(sorted_instances)
         for service_name, instance_num in sorted_instances:
             requirements = self.cluster_infos[service_name]
             #print(requirements)
@@ -83,8 +102,12 @@ class ClusterWorkerDistribution:
                 distribution[best_node].append((service_name, instance_num))
             else:
                 print(
-                    f"Warning: Could not place instance {instance_num} of microservice '{service_name}'. Insufficient resources on all nodes.")
-                return None
+                    f"Warning: Could not place instance {instance_num} of microservice {service_name}. Insufficient resources on all nodes. As requested CPUs are {total_cpus_need} available cpus are {total_worker_cpu} and Memoru need is {total_memory_need} and available is {total_worker_memory}")
+                #return None
+                create_new_worker=CreateNewWorker()
+                
+
+
 
         return distribution
 
@@ -99,9 +122,9 @@ def main():
 
     microservices = {
         'service_a': {'cpu': 3, 'memory': 5, 'instances': 2},
-        'service_b': {'cpu': 2, 'memory': 3, 'instances': 3},
+        'service_b': {'cpu': 2, 'memory': 3, 'instances': 20},
         'service_c': {'cpu': 5, 'memory': 8, 'instances': 4},
-        'service_d': {'cpu': 4, 'memory': 4, 'instances': 8}
+        'service_d': {'cpu': 4, 'memory': 4, 'instances': 3}
     }
     cwn = ClusterWorkerDistribution(worker_nodes, microservices)
     distribution = cwn.distribute_cluster_nodes()
