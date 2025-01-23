@@ -1,15 +1,13 @@
 import logging
 import boto3
-import time
 from logpkg.log_kcld import LogKCld, log_to_file
-from utils.ReadConfig import ReadConfig as rc
-from utils.singleton import Singleton
 import json
 logger = LogKCld()
 
+
 class AwsInterface:
     @log_to_file(logger)
-    def __init__(self, aws_access_key_id, aws_secret_access_key,region_name):
+    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str,region_name: str):
         try:
             self.session = boto3.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
             self.ec2_client = self.session.client('ec2')
@@ -17,7 +15,7 @@ class AwsInterface:
             logging.error(f"Exception initializing AWS Interface "f" {err}")
             raise
     @log_to_file(logger)
-    def create_ec2_instance(self,instance_type, ami_id, key_name, security_group_ids) -> None:
+    def create_ec2_instance(self,instance_type: str, ami_id: str, key_name: str, security_group_ids:list,**kwargs) -> None:
         """
         Creates an EC2 instance using credentials loaded from a YAML file.
 
@@ -28,20 +26,22 @@ class AwsInterface:
             key_name (str): Name of the key pair to use for access.
             security_group_ids (list): List of security group IDs.
         """
+        kwargs.setdefault('MinCount', 1)
+        kwargs.setdefault('MaxCount', 1)
 
         response = self.ec2_client.run_instances(
             ImageId=ami_id,
             InstanceType=instance_type,
             KeyName=key_name,
             SecurityGroupIds=security_group_ids,
-            MinCount=1,
-            MaxCount=1
+            **kwargs
         )
 
         instance_id = response['Instances'][0]['InstanceId']
         print(f"EC2 instance created with ID: {instance_id}")
+        return response
     @log_to_file(logger)
-    def get_ec2s_information(self):
+    def get_ec2s_information(self) -> json:
         #print("inside the function")
         try:
             instances = []
