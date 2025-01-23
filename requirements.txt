@@ -9,3 +9,5 @@ boto3
 PyYAML
 celery
 redis
+httpx
+#celery-beat

@@ -7,12 +7,16 @@ import time
 import re
 from utils.singleton import Singleton
 from utils.ReadConfig import ReadConfig as rc
+from logpkg.log_kcld import LogKCld, log_to_file
+logger = LogKCld()
 
 
 class _UtilitiesExtension:
+    @log_to_file(logger)
     def __init__(self, key):
         self.key = key
 
+    @log_to_file(logger)
     def generate_time_based_uid(self) -> str:
         # Get current timestamp
         current_time = int(time.time() * 1000000)  # Convert to milliseconds
@@ -29,6 +33,7 @@ class _UtilitiesExtension:
 
         return base64_encoded
 
+    @log_to_file(logger)
     def generate_uuid_with_key(self) -> str:
         # Use SHA-256 hash function
         hash_object = hashlib.sha256(self.key.encode())
@@ -42,6 +47,7 @@ class _UtilitiesExtension:
 
         return generated_uuid
 
+    @log_to_file(logger)
     def encode_hostname_with_key(self, hash_algorithm='sha256', hostname: str = None) -> str:
         """
         Encodes the hostname using the provided key and a hash algorithm.
