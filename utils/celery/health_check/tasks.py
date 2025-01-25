@@ -2,9 +2,7 @@ import httpx
 import aiohttp
 import asyncio
 from utils.celery.celery_config import celery_app
-from celery.schedules import crontab
 from celery import shared_task,Task
-import logging
 from datetime import datetime
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -12,31 +10,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from logpkg.log_kcld import LogKCld, log_to_file
 
 logger = LogKCld()
-# urls = [
-#     "https://www.google.com",
-#     "https://timesofindia.com",
-#     "https://www.yahoo.com",
-#     "https://www.cnn.com",
-#     "https://www.foxnews.com",
-#     "https://www.thehindu.com",
-#     "https://www.vzw.com",
-#     "https://www.verizon.com",
-#     "https://www.att.com",
-#     "https://www.greatandhra.com",
-#     "https://www.youtube.com",
-#     "https://www.nfl.com",
-#     "https://www.nba.com",
-#     "https://www.pgatour.com",
-#     # Add more unique host URLs here
-# ]
-#
-# celery_app.conf.beat_schedule = {
-#     'run-health-checks-every-5-seconds': {
-#         'task': 'utils.celery.health_check_tasks.perform_health_check',
-#         'schedule': 5.0,
-#         'args': urls
-#     },
-# }
 
 class AsyncTask(Task):
     def __call__(self, *args, **kwargs):

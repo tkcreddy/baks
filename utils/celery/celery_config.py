@@ -1,10 +1,14 @@
 from celery import Celery
-from kombu import Queue
+from kombu import Queue,Exchange
+from hashlib import sha256
+from socket import gethostname
+from utils.extensions.utilities_extention import UtilitiesExtension
+from utils.ReadConfig import ReadConfig as rc
 
 
-class CeleryAppConfig:
+class CeleryAppConfig():
     def __init__(self, name='utils.celery.tasks', broker_url='redis://localhost:6379/0',
-                 backend_url='redis://localhost:6379/0'):
+                 backend_url='redis://localhost:6379/0') -> None:
         """
         Initializes the Celery application with broker and backend configurations.
         """
@@ -35,6 +39,33 @@ class CeleryAppConfig:
             "https://www.lll.com"
             # Add more unique host URLs here
         ]
+        secure_exchange = Exchange('secure_exchange', type='direct')
+        hostname = gethostname()
+
+        read_config=rc()
+        key=read_config.encryption_config['key']
+        encode_util = UtilitiesExtension(key)
+        print(f'Key is {key}')
+       # encode_hostname=encode_util.encode_hostname_with_key(hostname)
+
+        def generate_queue_name(hostname)->str:
+            return sha256(hostname.encode()).hexdigest()[:16]  # Shortened hash for readability
+
+        # Generate the dynamic queue name
+        #dynamic_queue_name = generate_queue_name(hostname)
+        dynamic_queue_name = encode_util.encode_hostname_with_key(hostname)
+
+        # Configure Celery with the dynamic queue
+        # Configure Celery with the dynamic queue
+        self.app.conf.task_queues = [
+            Queue(dynamic_queue_name, exchange=secure_exchange, routing_key=dynamic_queue_name),
+        ]
+
+        # Optionally configure a default route
+        self.app.conf.task_routes = {
+            'tasks.hostname_task': {'queue': dynamic_queue_name, 'routing_key': dynamic_queue_name},
+        }
+
         self.app.conf.update(
             task_serializer='json',
             accept_content=['json'],
@@ -50,6 +81,10 @@ class CeleryAppConfig:
                     'schedule': 5.0,
                     'args': [url_list],
                     'options': {
+                        'queue': dynamic_queue_name,
+                        'exchange': secure_exchange,
+                        'routing_key': dynamic_queue_name,
+                        'delivery_mode': 2,
                         # ensure we don't accumulate a huge backlog of these if the workers are down
                         'expires': 5
                     }
@@ -57,6 +92,7 @@ class CeleryAppConfig:
                 },
             },
         )
+
 
     # def route_task(self, name, args, kwargs, options, task=None, **kw):
     #     """
