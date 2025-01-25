@@ -48,27 +48,19 @@ class CeleryAppConfig:
         print(f'Key is {key}')
        # encode_hostname=encode_util.encode_hostname_with_key(hostname)
 
-        def generate_queue_name(name)->str:
-            return sha256(name.encode()).hexdigest()[:16]  # Shortened hash for readability
 
         # Generate the dynamic queue name
         #dynamic_queue_name = generate_queue_name(hostname)
-        hostname_dynamic_queue_name = encode_util.encode_hostname_with_key(hostname)
-        aws_interface_queue_name = encode_util.encode_hostname_with_key('aws_interface')
+        health_check_queue_name = encode_util.encode_hostname_with_key('health_check')
 
-        # Configure Celery with the dynamic queue
 
-        self.app.conf.task_queues = [
-            Queue(hostname_dynamic_queue_name, exchange=secure_exchange, routing_key=hostname_dynamic_queue_name),
-            Queue(aws_interface_queue_name, exchange=secure_exchange, routing_key=aws_interface_queue_name),
 
-        ]
-
-        # Optionally configure a default route
-        self.app.conf.task_routes = {
-            'tasks.utils.celery.health_check.tasks.health_check_task': {'queue': hostname_dynamic_queue_name, 'routing_key': hostname_dynamic_queue_name},
-            'tasks.utils.celery.aws.tasks.get_ec2_instances': {'queue': aws_interface_queue_name, 'routing_key': aws_interface_queue_name },
-        }
+        #
+        # # Optionally configure a default route
+        # self.app.conf.task_routes = {
+        #     'tasks.utils.celery.health_check.tasks.health_check_task': {'queue': health_check_queue_name, 'routing_key': health_check_queue_name},
+        #     'tasks.utils.celery.aws.tasks.get_ec2_instances': {'queue': aws_interface_queue_name, 'routing_key': aws_interface_queue_name },
+        # }
 
         self.app.conf.update(
             task_serializer='json',
@@ -81,13 +73,13 @@ class CeleryAppConfig:
 
             beat_schedule={
                 'run-health-check-every-5-seconds': {
-                    'task': 'utils.celery.health_check.tasks.health_check_task',
+                    'task': 'utils.celery.tasks.health_check_tasks.health_check_task',
                     'schedule': 5.0,
                     'args': [url_list],
                     'options': {
-                        'queue': hostname_dynamic_queue_name,
+                        'queue': health_check_queue_name,
                         'exchange': secure_exchange,
-                        'routing_key': hostname_dynamic_queue_name,
+                        'routing_key': health_check_queue_name,
                         'delivery_mode': 2,
                         # ensure we don't accumulate a huge backlog of these if the workers are down
                         'expires': 5
