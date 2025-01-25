@@ -5,7 +5,7 @@ from utils.extensions.utilities_extention import UtilitiesExtension
 from kombu import Queue,Exchange
 import time
 logger = LogKCld()
-from utils.celery.aws.tasks import get_ec2_instances,create_worker_nodes,terminate_worker_node
+from utils.celery.tasks.aws_tasks import get_ec2_instances,create_worker_nodes,terminate_worker_node
 
 def main():
     read_config = rc()
