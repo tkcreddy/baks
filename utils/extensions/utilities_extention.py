@@ -48,7 +48,7 @@ class _UtilitiesExtension:
         return generated_uuid
 
     @log_to_file(logger)
-    def encode_hostname_with_key(self, hash_algorithm='sha256', hostname: str = None) -> str:
+    def encode_hostname_with_key(self, hostname: str = None, size:int = 24,hash_algorithm='sha256',) -> str:
         """
         Encodes the hostname using the provided key and a hash algorithm.
 
@@ -67,7 +67,7 @@ class _UtilitiesExtension:
         hmac_object = hmac.new(self.key.encode(), self.hostname.encode(), getattr(hashlib, hash_algorithm))
 
         # Return the hexadecimal digest of the HMAC
-        return hmac_object.hexdigest()
+        return hmac_object.hexdigest()[:size]
 
 
 class UtilitiesExtension(_UtilitiesExtension, metaclass=Singleton):
