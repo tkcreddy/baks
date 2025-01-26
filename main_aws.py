@@ -14,30 +14,51 @@ def main():
     # key_name = "NEW_KCR"
     # security_group_ids = ["sg-09ac434d5bead2ab1"]
     key_read=read_config.encryption_config
-    secure_exchange = Exchange('secure_exchange', type='direct')
+    #secure_exchange = Exchange('secure_exchange', type='direct')
     aws_config = read_config.aws_config
     ue=UtilitiesExtension(key_read['key'])
     print(f"print {aws_config}")
-    aws_interface_queue_name=ue.encode_hostname_with_key('aws_interface')
-    #result=get_ec2_instances.delay(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'])
-    result=get_ec2_instances.apply_async(
-        args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region']),
-        exchange=secure_exchange,
-        queue=aws_interface_queue_name,
-        routing_key=aws_interface_queue_name,
-        delivery_mode=2,  # Persistent messages
-    )
-    print("Task sent. Waiting for result...")
-    print(result.get(timeout=30))
-    #result = create_worker_nodes.delay(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],instance_type,ami_id,key_name,security_group_ids)
-    #print("Task sent. Waiting for result...")
-    #response= result.get(timeout=30)
-    #instance = response['Instances'][0]['InstanceId']
-    #print(instance)
+    #aws_interface_queue_name=
+    queue_info={}
+    queue_info={'exchange': Exchange('secure_exchange', type='direct'), 'queue': ue.encode_hostname_with_key('aws_interface'), 'routing_key': ue.encode_hostname_with_key('aws_interface'), 'delivery_mode': 2}
+
+    # result=get_ec2_instances.apply_async(
+    #     args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region']), **queue_info)
+    #
+    # print("Task sent. Waiting for result...")
+    # print(result.get(timeout=30))
+    min=2
+    max=2
+    cluster_key='ClusterName'
+    cluster_value='Test_Cluster'
+    min_max_tags={
+        'MinCount':min,
+        'MaxCount':max,
+        'TagSpecifications':[{
+            'ResourceType': 'instance',
+            'Tags': [
+                    {
+                    'Key': cluster_key,
+                    'Value': cluster_value
+                    }
+            ]
+            }]
+    }
+    # result = create_worker_nodes.apply_async(args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],instance_type,ami_id,key_name,security_group_ids),
+    #                                          kwargs=min_max_tags,**queue_info)
+    # print("Task sent. Waiting for result...")
+    # response= result.get(timeout=30)
+    # instances=[]
+    # print(min_max_tags['MaxCount'])
+    # for i in range(int(min_max_tags['MaxCount'])):
+    #     instances.append(response['Instances'][i]['InstanceId'])
+    # print(instances)
     #time.sleep(50)
-    #result = terminate_worker_node.delay(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],[instance])
-    #response = result.get(timeout=30)
-    #print(str(response))
+    instances=['i-07247997712a85fc7', 'i-0611d52dfc54bddec']
+    result = terminate_worker_node.apply_async(args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],instances),**queue_info)
+    response = result.get(timeout=30)
+
+#print(str(response))
 
 
 
