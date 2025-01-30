@@ -22,3 +22,18 @@ class HcTrack:
             print(f"Health check failed. Consecutive failures: {current_count}")
         self.redis_client.expire(failure_count_key,60)
 
+    def lb_update(self, url:str,status:str,time:int=60,cluster_name:str =None):
+        failure_count_key = f"{url}:::failure_count"
+
+    # Get the latest health check result (e.g., pushed by an external service)
+    #health_status = redis_client.get(key)  # Assume 'key' stores "pass" or "fail"
+
+        if status == "healthy":
+            print("Health check passed.")
+            self.redis_client.set(failure_count_key, 0)  # Reset failure count on success
+        elif status == "unhealthy":
+            # Increment failure count on failure
+            current_count = self.redis_client.incr(failure_count_key)
+            print(f"Health check failed. Consecutive failures: {current_count}")
+        self.redis_client.expire(failure_count_key,60)
+
