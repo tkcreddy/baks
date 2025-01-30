@@ -3,6 +3,7 @@ from kombu import Queue,Exchange
 from socket import gethostname
 from utils.ReadConfig import ReadConfig as rc
 from utils.extensions.utilities_extention import UtilitiesExtension
+from utils.redis.hc_get_name_urls import get_urls_with_cluster
 
 url_list = [
     "https://www.google.com",
@@ -34,7 +35,7 @@ celery_app.conf.update(
         'run-health-check-every-5-seconds': {
             'task': 'utils.celery.tasks.health_check_tasks.health_check_task',
             'schedule': 5.0,
-            'args': [url_list],
+            'args': get_urls_with_cluster('url_to_cluster', 'cluster_1'),
             'options': {
                 'queue': health_check_queue_name,
                 'exchange': secure_exchange,
