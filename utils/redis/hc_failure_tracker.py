@@ -1,14 +1,12 @@
 import redis
-
-
 class HcFailureTracker:
 
     def __init__(self):
-# Connect to Redis
+    # Connect to Redis
         self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=1, decode_responses=True)
 
 
-    def hc_failure_tracker(self,hash_name, field, status, expiration_time=None,increment_by=1,):
+    def hc_failure_tracker(self,hash_name, field, status,current_time, expiration_time=None,increment_by=1,):
         """
         Increment a field in a Redis hash by a specified amount.
         Optionally set an expiration for the hash.
@@ -46,8 +44,4 @@ class HcFailureTracker:
         self.redis_client.setex(key, expiry, value)
         print(f"Set {field} in {hashname} with expiry of {expiry} seconds.")
 
-# Example usage
-# new_value = hc_failure_tracker("my_hash", "my_field", increment_by=1, expiration_time=30)
-# print(f"New value: {new_value}")  # Prints the new value of the field
-# print(redis_client.hgetall("my_hash"))  # Output the entire hash
 

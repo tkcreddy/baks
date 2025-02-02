@@ -6,13 +6,8 @@ class HcTrack:
         # Connect to Redis
         self.redis_client = redis.StrictRedis(host=host, port=port,db=db, decode_responses=True)
 
-
-    def track_consecutive_failures(self, key:str,status:str,time:int=60,cluster_name:str =None):
-        failure_count_key = f"{key}:::failure_count"
-
-    # Get the latest health check result (e.g., pushed by an external service)
-    #health_status = redis_client.get(key)  # Assume 'key' stores "pass" or "fail"
-
+    def track_consecutive_failures(self, key:str,status:str,time:int=60,hashName:str ="cluster_1"):
+        failure_count_key = f"{hashName}:::{key}:::failure_count"
         if status == "healthy":
             print("Health check passed.")
             self.redis_client.set(failure_count_key, 0)  # Reset failure count on success
@@ -24,10 +19,6 @@ class HcTrack:
 
     def lb_update(self, url:str,status:str,time:int=60,cluster_name:str =None):
         failure_count_key = f"{url}:::failure_count"
-
-    # Get the latest health check result (e.g., pushed by an external service)
-    #health_status = redis_client.get(key)  # Assume 'key' stores "pass" or "fail"
-
         if status == "healthy":
             print("Health check passed.")
             self.redis_client.set(failure_count_key, 0)  # Reset failure count on success

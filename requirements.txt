@@ -10,4 +10,5 @@ PyYAML
 celery
 redis
 httpx
+redis-om
 #celery-beat
