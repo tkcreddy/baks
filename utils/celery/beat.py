@@ -1,10 +1,11 @@
 from utils.celery.celery_config import celery_app
 from kombu import Queue,Exchange
+from json import dumps
 from socket import gethostname
 from utils.ReadConfig import ReadConfig as rc
 from utils.extensions.utilities_extention import UtilitiesExtension
 from utils.redis.hc_get_name_urls import get_urls_with_cluster
-
+cluster_name='cluster_1'
 url_list = [
     "https://www.google.com",
     "https://www.timesofindia.com",
@@ -35,7 +36,7 @@ celery_app.conf.update(
         'run-health-check-every-5-seconds': {
             'task': 'utils.celery.tasks.health_check_tasks.health_check_task',
             'schedule': 5.0,
-            'args': get_urls_with_cluster('url_to_cluster', 'cluster_1'),
+            'args': ['cluster_1'],
             'options': {
                 'queue': health_check_queue_name,
                 'exchange': secure_exchange,
@@ -46,5 +47,10 @@ celery_app.conf.update(
             }
 
         },
+
+    'refresh-health-check-args-every-30-seconds': {
+        'task': 'utils.celery.tasks.refresh_health_check_arguments',
+        'schedule': 10.0,  # Refresh args every 30 seconds
+    },
     },
 )

@@ -52,6 +52,12 @@ class _ReadConfig:
     @property
     def aws_config(self):
         return self._config_data['aws']
+    @property
+    def redis_db_config(self):
+        return self._config_data['redis_db']
+    @property
+    def redis_queue_config(self):
+        return self._config_data['redis_queue_config']
 
 class ReadConfig(_ReadConfig, metaclass=Singleton):
     pass
