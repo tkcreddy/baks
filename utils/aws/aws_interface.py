@@ -2,20 +2,24 @@ import logging
 import boto3
 from logpkg.log_kcld import LogKCld, log_to_file
 import json
+
 logger = LogKCld()
 
 
 class AwsInterface:
     @log_to_file(logger)
-    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str,region_name: str):
+    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str):
         try:
-            self.session = boto3.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
+            self.session = boto3.Session(aws_access_key_id=aws_access_key_id,
+                                         aws_secret_access_key=aws_secret_access_key, region_name=region_name)
             self.ec2_client = self.session.client('ec2')
         except Exception as err:
             logging.error(f"Exception initializing AWS Interface "f" {err}")
             raise
+
     @log_to_file(logger)
-    def create_ec2_instance(self,instance_type: str, ami_id: str, key_name: str, security_group_ids:list,**kwargs) -> None:
+    def create_ec2_instance(self, instance_type: str, ami_id: str, key_name: str, security_group_ids: list,
+                            namespace: str | None, **kwargs) -> None:
         """
         Creates an EC2 instance using credentials loaded from a YAML file.
 
@@ -25,24 +29,35 @@ class AwsInterface:
             ami_id (str): Amazon Machine Image (AMI) ID.
             key_name (str): Name of the key pair to use for access.
             security_group_ids (list): List of security group IDs.
+            namespace: str = NonevName for the namcespace
         """
         kwargs.setdefault('MinCount', 1)
         kwargs.setdefault('MaxCount', 1)
+        TAGS = [
+            {"Key": "Namespace", "Value": namespace}
+        ]
 
         response = self.ec2_client.run_instances(
             ImageId=ami_id,
             InstanceType=instance_type,
             KeyName=key_name,
             SecurityGroupIds=security_group_ids,
+            TagSpecifications=[
+                                  {
+                                      "ResourceType": "instance",
+                                      "Tags": TAGS
+                                  }
+                              ],
             **kwargs
         )
 
         instance_id = response['Instances'][0]['InstanceId']
         print(f"EC2 instance created with ID: {instance_id}")
         return response
+
     @log_to_file(logger)
     def get_ec2s_information(self) -> json:
-        #print("inside the function")
+        # print("inside the function")
         try:
             instances = []
             paginator = self.ec2_client.get_paginator('describe_instances')
@@ -68,6 +83,7 @@ class AwsInterface:
 
         # Convert the list of instances to JSON format
         return json.dumps(instances, indent=4, default=str)
+
     @log_to_file(logger)
     def get_ec2_info(self):
         try:
@@ -79,8 +95,9 @@ class AwsInterface:
         except Exception as err:
             logging.error(f"Exception getting AWS info "f" {err}")
             raise
+
     @log_to_file(logger)
-    def terminate_ec2_instances(self,instance_ids):
+    def terminate_ec2_instances(self, instance_ids):
         try:
             response = self.ec2_client.terminate_instances(InstanceIds=instance_ids)
             for instance in response['TerminatingInstances']:
@@ -90,7 +107,3 @@ class AwsInterface:
             print(f"An error occurred: {e}")
 
     # List of instance IDs to terminate
-
-
-
-
