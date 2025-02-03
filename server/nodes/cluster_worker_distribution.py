@@ -1,5 +1,5 @@
 import random
-from utils.aws.create_new_worker import CreateNewWorker
+from utils.aws.aws_interface import AwsInterface
 class ClusterWorkerDistribution:
     def __init__(self, worker_nodes: list[dict[str, int]], cluster_infos: dict[str, dict[str, int]]) -> None:
         if not isinstance(worker_nodes, list) or not worker_nodes:
@@ -104,11 +104,7 @@ class ClusterWorkerDistribution:
                 print(
                     f"Warning: Could not place instance {instance_num} of microservice {service_name}. Insufficient resources on all nodes. As requested CPUs are {total_cpus_need} available cpus are {total_worker_cpu} and Memoru need is {total_memory_need} and available is {total_worker_memory}")
                 #return None
-                create_new_worker=CreateNewWorker()
-                
-
-
-
+                ##awsInterface=AwsInterface()
         return distribution
 
 
