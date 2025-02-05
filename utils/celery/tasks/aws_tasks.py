@@ -39,11 +39,11 @@ def create_worker_nodes(aws_access_key: str = None, aws_secret_key: str = None, 
 @celery_app.task
 @log_to_file(logger)
 def terminate_worker_node(aws_access_key: str = None, aws_secret_key: str = None, region: str = None,
-                          instance_id: str = None):
+                          instance_ids: list = None):
     response_data = ""
     try:
         aws_interface = AwsInterface(aws_access_key, aws_secret_key, region)
-        response_data = aws_interface.terminate_ec2_instances(instance_id)
+        response_data = aws_interface.terminate_ec2_instances(instance_ids)
     except Exception as err:
         print(f"Erroring with {err}")
     finally:

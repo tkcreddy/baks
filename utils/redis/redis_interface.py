@@ -7,12 +7,47 @@ class RedisInterface:
         self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
     # Nodes Storage
-    def save_node(self, name, ipaddress):
-        self.redis_client.hset("nodes", name, json.dumps({"ipaddress": ipaddress}))
+    def save_node(self, name, data:dict):
+        self.redis_client.hset("nodes", name, json.dumps(data))
 
     def get_nodes(self):
         nodes = self.redis_client.hgetall("nodes")
         return {name: json.loads(data) for name, data in nodes.items()}
+
+    def get_instance_ids(self):
+        """Retrieves a list of instance IDs from Redis-stored node data."""
+        nodes = self.redis_client.hgetall("nodes")
+
+        if not nodes:
+            return None
+
+        return [json.loads(data).get("InstanceId") for data in nodes.values() if "InstanceId" in json.loads(data)]
+
+    def get_instance_ids_namespace(self,namespace):
+        """Retrieves a list of instance IDs from Redis-stored node data."""
+        nodes = self.redis_client.hgetall("nodes")
+
+        instance_ids=[]
+        if not nodes:
+            return None
+        for data in nodes.values():
+            node_data = json.loads(data)
+            if node_data.get("NameSpace") == namespace:
+                instance_ids.append(node_data.get("InstanceId"))
+        return instance_ids if instance_ids else None
+
+
+    def delete_instance_ids(self,instance_ids:list):
+        """Retrieves a list of instance IDs from Redis-stored node data and deletes the corresponding keys."""
+        nodes = self.redis_client.hgetall("nodes")
+        instances_results={}
+        if not nodes:
+            return None
+        for name, data in nodes.items():
+            node_data = json.loads(data)
+            if node_data.get("InstanceId") in instance_ids:
+                self.redis_client.hdel("nodes", name)
+        return True
 
     # Get a Node by Name
     def get_node_by_name(self, name):
@@ -20,12 +55,36 @@ class RedisInterface:
         return json.loads(data) if data else None
 
     # Get a Node by IP Address (Search All Nodes)
-    def get_node_by_ip(self, ipaddress):
+    import json
+
+    def get_node_by_ip(self, ip_address):
+        """Retrieves node details by IP address from Redis-stored node data."""
         nodes = self.redis_client.hgetall("nodes")
+
         for name, data in nodes.items():
             node_data = json.loads(data)
-            if node_data["ipaddress"] == ipaddress:
-                return {"name": name, "ipaddress": node_data["ipaddress"]}
+            if node_data.get("IpAddress") == ip_address:
+                return {"name": name, "IpAddress": node_data["IpAddress"]}
+
+        return None
+
+    def save_node_config(self, name, cpu, memory):
+        self.redis_client.hset("node_config", name, json.dumps({"cpu": cpu, "memory": memory}))
+
+    def get_node_config_more_cpu(self, cpu):
+        nodes = self.redis_client.hgetall("node_config")
+        for name, data in nodes.items():
+            node_data = json.loads(data)
+            if node_data["cpu"] > cpu:
+                return {"name": name, "cpu": node_data["cpu"]}
+        return None
+
+    def get_node_config_more_mem(self, memory):
+        nodes = self.redis_client.hgetall("node_config")
+        for name, data in nodes.items():
+            node_data = json.loads(data)
+            if node_data["memory"] > memory:
+                return {"name": name, "memory": node_data["memory"]}
         return None
 
     # Container Storage
@@ -84,9 +143,11 @@ class RedisInterface:
 
     def get_healthy_containers(self, cluster):
         return self.redis_client.smembers(f"healthy_containers:{cluster}")
+
+
 #
 # # Usage Example
-# redis_manager = RedisClusterManager()
+redis_manager = RedisInterface()
 #
 # # Store Nodes
 # redis_manager.save_node("node1", "192.168.1.1")
@@ -119,3 +180,15 @@ class RedisInterface:
 # print("Container Clusters:", redis_manager.get_container_clusters())
 # print("Cluster Health Config:", redis_manager.get_cluster_health())
 # print("Healthy Containers in Cluster1:", redis_manager.get_healthy_containers("cluster1"))
+
+
+# redis_manager.save_node_config("t2.nano", 1, 0.5)
+# redis_manager.save_node_config("t2.micro", 1, 1)
+# redis_manager.save_node_config("t2.small", 1, 2)
+# redis_manager.save_node_config("t2.medium", 2, 4)
+# redis_manager.save_node_config("t3.nano", 2, 0.5)
+# redis_manager.save_node_config("t3.micro", 2, 1)
+# redis_manager.save_node_config("t3.small", 2, 2)
+# redis_manager.save_node_config("t3.medium", 2, 4)
+# redis_manager.save_node_config("c1.medium", 2, 1.7)
+# redis_manager.save_node_config("c3.large", 2, 3.75)
