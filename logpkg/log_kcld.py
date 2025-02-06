@@ -38,7 +38,7 @@ class _LogKCld(object):
             self.file_handler = logging.FileHandler(log_file)
             self.file_handler.setFormatter(self.formatter)
             self.logger.addHandler(self.file_handler)
-        print(f"initializing Logger once")
+        print("initializing Logger once")
 
     def info(self, msg, extra=None):
         self.logger.info(msg, extra=extra)

@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 from celery import Celery
 import os
 
+from datetime import timezone
 app = FastAPI()
 
 # Secret key for JWT
@@ -44,8 +45,8 @@ def authenticate_user(username: str, password: str):
 # Create JWT Token
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode["exp"] = expire
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # Token Endpoint
@@ -68,10 +69,10 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         if username is None or username not in fake_users_db:
             raise HTTPException(status_code=401, detail="Invalid authentication")
         return username
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.ExpiredSignatureError as e:
+        raise HTTPException(status_code=401, detail="Token expired") from e
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail="Invalid token") from e
 
 # Post a Celery Task
 @app.post("/tasks/")
