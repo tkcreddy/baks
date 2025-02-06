@@ -46,7 +46,7 @@ class _UtilitiesExtension:
         return base64_encoded[:-2]
 
     @log_to_file(logger)
-    def encode_phrase_with_key(self, phrase: str = None, size: int = 24, hash_algorithm='sha256', ) -> str | None:
+    def encode_phrase_with_key(self, phrase: str = None, size: int = 48, hash_algorithm='sha256', ) -> str | None:
         """
         Encodes the hostname using the provided key and a hash algorithm.
 

@@ -6,6 +6,13 @@ class RedisInterface:
     def __init__(self,host:str='localhost',port:int=6379,db:int=1):
         self.redis_client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
 
+    def save_user_pass(self, user, password):
+        self.redis_client.hset("authentication", user, password)
+        
+    def get_user_pass(self,user):
+        password=self.redis_client.hget("authentication", user)
+        return password or None
+    
     # Nodes Storage
     def save_node(self, name, data:dict):
         self.redis_client.hset("nodes", name, json.dumps(data))

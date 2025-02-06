@@ -1,30 +1,39 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from utils.extensions.utilities_extention import UtilitiesExtension
+from utils.redis.redis_interface import RedisInterface
+from utils.ReadConfig import ReadConfig as rc
+from logpkg.log_kcld import LogKCld
 from datetime import datetime, timedelta
+from utils.celery.tasks.aws_tasks import get_ec2_instances,create_worker_nodes,terminate_worker_node
 import jwt
 from passlib.context import CryptContext
 from celery import Celery
 import os
-
-from datetime import timezone
+read_config=rc()
+redis_config=read_config.redis_db_config
+rd=RedisInterface(redis_config['redis_host'],redis_config['redis_port'],redis_config['redis_db'])
 app = FastAPI()
 
+
 # Secret key for JWT
-SECRET_KEY = "supersecretkey"
+key=read_config.encryption_config['key']
+SECRET_KEY = key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ue=UtilitiesExtension(key)
 
 # OAuth2 for authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Fake users database
 fake_users_db = {
     "user": {
         "username": "user",
-        "hashed_password": pwd_context.hash("password")
+        "hashed_password": ue.encode_phrase_with_key('password')
     }
 }
 
@@ -37,15 +46,15 @@ celery = Celery(
 
 # Authenticate User
 def authenticate_user(username: str, password: str):
-    user = fake_users_db.get(username)
-    if not user or not pwd_context.verify(password, user["hashed_password"]):
+    if not rd.get_user_pass(username):
         return False
-    return user
+    if ue.encode_phrase_with_key(password) == rd.get_user_pass(username):
+        return username
 
 # Create JWT Token
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.utcnow() + expires_delta
     to_encode["exp"] = expire
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -61,18 +70,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Dependency to get the current user
+#Dependency to get the current user
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
-        if username is None or username not in fake_users_db:
+        print(username)
+        if username is None or not rd.get_user_pass(username):
             raise HTTPException(status_code=401, detail="Invalid authentication")
         return username
-    except jwt.ExpiredSignatureError as e:
-        raise HTTPException(status_code=401, detail="Token expired") from e
-    except jwt.InvalidTokenError as e:
-        raise HTTPException(status_code=401, detail="Invalid token") from e
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # Post a Celery Task
 @app.post("/tasks/")
