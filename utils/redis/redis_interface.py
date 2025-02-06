@@ -16,17 +16,15 @@ class RedisInterface:
 
     def get_instance_ids(self):
         """Retrieves a list of instance IDs from Redis-stored node data."""
-        nodes = self.redis_client.hgetall("nodes")
-
-        if not nodes:
+        if nodes := self.redis_client.hgetall("nodes"):
+            return [json.loads(data).get("InstanceId") for data in nodes.values() if "InstanceId" in json.loads(data)]
+        else:
             return None
-
-        return [json.loads(data).get("InstanceId") for data in nodes.values() if "InstanceId" in json.loads(data)]
 
     def get_instance_ids_namespace(self,namespace):
         """Retrieves a list of instance IDs from Redis-stored node data."""
         nodes = self.redis_client.hgetall("nodes")
-
+        print(nodes)
         instance_ids=[]
         if not nodes:
             return None
@@ -34,7 +32,7 @@ class RedisInterface:
             node_data = json.loads(data)
             if node_data.get("NameSpace") == namespace:
                 instance_ids.append(node_data.get("InstanceId"))
-        return instance_ids if instance_ids else None
+        return instance_ids or None
 
 
     def delete_instance_ids(self,instance_ids:list):
@@ -72,19 +70,18 @@ class RedisInterface:
         self.redis_client.hset("node_config", name, json.dumps({"cpu": cpu, "memory": memory}))
 
     def get_node_config_more_cpu(self, cpu):
-        nodes = self.redis_client.hgetall("node_config")
-        for name, data in nodes.items():
-            node_data = json.loads(data)
-            if node_data["cpu"] > cpu:
-                return {"name": name, "cpu": node_data["cpu"]}
-        return None
+        return self._extracted_from_get_node_config_more_mem_2("cpu", cpu)
 
     def get_node_config_more_mem(self, memory):
+        return self._extracted_from_get_node_config_more_mem_2("memory", memory)
+
+    # TODO Rename this here and in `get_node_config_more_cpu` and `get_node_config_more_mem`
+    def _extracted_from_get_node_config_more_mem_2(self, arg0, arg1):
         nodes = self.redis_client.hgetall("node_config")
         for name, data in nodes.items():
             node_data = json.loads(data)
-            if node_data["memory"] > memory:
-                return {"name": name, "memory": node_data["memory"]}
+            if node_data[arg0] > arg1:
+                return {"name": name, arg0: node_data[arg0]}
         return None
 
     # Container Storage
