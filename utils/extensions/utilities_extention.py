@@ -8,6 +8,7 @@ import re
 from utils.singleton import Singleton
 from utils.ReadConfig import ReadConfig as rc
 from logpkg.log_kcld import LogKCld, log_to_file
+
 logger = LogKCld()
 
 
@@ -42,27 +43,40 @@ class _UtilitiesExtension:
         # Encode the hashed key to base64
         base64_encoded = base64.b64encode(hashed_key).decode('utf-8')
 
-        # Create a UUID-like alphanumeric string
-        generated_uuid = base64_encoded[:-2]  # Trim '==' from the end
-
-        return generated_uuid
+        return base64_encoded[:-2]
 
     @log_to_file(logger)
-    def encode_hostname_with_key(self, hostname: str = None, size:int = 24,hash_algorithm='sha256',) -> str:
+    def encode_phrase_with_key(self, phrase: str = None, size: int = 24, hash_algorithm='sha256', ) -> str | None:
         """
         Encodes the hostname using the provided key and a hash algorithm.
 
-        :param hostname:
-        :param key: Secret key used for encoding.
+        :param phrase:
         :param hash_algorithm: Hash algorithm to use (default is 'sha256').
         :return: Encoded hash of the hostname.
         """
         # Get the hostname of the machine
-        if hostname is None:
-            self.hostname = socket.gethostname()
+        if phrase is None:
+            return None
         else:
-            self.hostname = hostname
+            self.phrase = phrase
 
+        # Create a HMAC object using the key and hash algorithm
+        hmac_object = hmac.new(self.key.encode(), self.phrase.encode(), getattr(hashlib, hash_algorithm))
+
+        # Return the hexadecimal digest of the HMAC
+        return hmac_object.hexdigest()[:size]
+
+    @log_to_file(logger)
+    def encode_hostname_with_key(self, hostname: str = None, size: int = 24, hash_algorithm='sha256', ) -> str:
+        """
+        Encodes the hostname using the provided key and a hash algorithm.
+
+        :param hostname:
+        :param hash_algorithm: Hash algorithm to use (default is 'sha256').
+        :return: Encoded hash of the hostname.
+        """
+        # Get the hostname of the machine
+        self.hostname = socket.gethostname() if hostname is None else hostname
         # Create a HMAC object using the key and hash algorithm
         hmac_object = hmac.new(self.key.encode(), self.hostname.encode(), getattr(hashlib, hash_algorithm))
 

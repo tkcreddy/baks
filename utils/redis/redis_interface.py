@@ -3,8 +3,8 @@ import json
 
 
 class RedisInterface:
-    def __init__(self):
-        self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    def __init__(self,host:str='localhost',port:int=6379,db:int=1):
+        self.redis_client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
 
     # Nodes Storage
     def save_node(self, name, data:dict):
