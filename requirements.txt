@@ -11,4 +11,9 @@ celery
 redis
 httpx
 redis-om
+fastapi
+jwt
+passlib
+uvicorn
+bcrypt
 #celery-beat
