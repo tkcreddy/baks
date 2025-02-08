@@ -53,6 +53,9 @@ class _ReadConfig:
     def aws_config(self):
         return self._config_data['aws']
     @property
+    def celery_config(self):
+        return self._config_data['celery']
+    @property
     def redis_db_config(self):
         return self._config_data['redis_db']
     @property

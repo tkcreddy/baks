@@ -2,8 +2,10 @@ import logging
 import boto3
 from logpkg.log_kcld import LogKCld, log_to_file
 import json
+from utils.redis.redis_interface import RedisInterface
 
 logger = LogKCld()
+rd=RedisInterface()
 
 
 class AwsInterface:
@@ -24,16 +26,15 @@ class AwsInterface:
         Creates an EC2 instance using credentials loaded from a YAML file.
 
         Args:
-            yaml_file_path (str): Path to the YAML file containing AWS credentials.
             instance_type (str): EC2 instance type (e.g., "t2.micro").
             ami_id (str): Amazon Machine Image (AMI) ID.
             key_name (str): Name of the key pair to use for access.
             security_group_ids (list): List of security group IDs.
-            namespace: str = NonevName for the namcespace
+            namespace: str = Namespace for the namespace
         """
         kwargs.setdefault('MinCount', 1)
         kwargs.setdefault('MaxCount', 1)
-        TAGS = [
+        tags = [
             {"Key": "Namespace", "Value": namespace}
         ]
 
@@ -45,14 +46,27 @@ class AwsInterface:
             TagSpecifications=[
                                   {
                                       "ResourceType": "instance",
-                                      "Tags": TAGS
+                                      "Tags": tags
                                   }
                               ],
             **kwargs
         )
+        #task_result = create_worker_nodes.AsyncResult(task_id).get(timeout=30)
+        instances = {
+            response['Instances'][i]['PrivateDnsName']: {
+                'IpAddress': response['Instances'][i]['PrivateIpAddress'],
+                'InstanceId': response['Instances'][i]['InstanceId'],
+                'NameSpace': namespace,
+                'InstanceType': response['Instances'][i]['InstanceType'],
+            }
+            for i in range(kwargs['MaxCount'])
+        }
+        # Save instances to Redis
+        for k, v in instances.items():
+            rd.save_node(k, v)
 
-        instance_id = response['Instances'][0]['InstanceId']
-        print(f"EC2 instance created with ID: {instance_id}")
+        # instance_id = response['Instances'][0]['InstanceId']
+        # print(f"EC2 instance created with ID: {instance_id}")
         return response
 
     @log_to_file(logger)
@@ -102,6 +116,8 @@ class AwsInterface:
             response = self.ec2_client.terminate_instances(InstanceIds=instance_ids)
             for instance in response['TerminatingInstances']:
                 print(f"Instance {instance['InstanceId']} is in {instance['CurrentState']['Name']} state.")
+            if response:
+                rd.delete_instance_ids(instance_ids)
             return response
         except Exception as e:
             print(f"An error occurred: {e}")

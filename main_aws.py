@@ -22,12 +22,12 @@ def main():
     rd=RedisInterface(redis_db_config['redis_host'],redis_db_config['redis_port'],redis_db_config['redis_db'])
 
     queue_info={'exchange': Exchange('secure_exchange', type='direct'), 'queue': ue.encode_hostname_with_key('aws_interface'), 'routing_key': ue.encode_hostname_with_key('aws_interface'), 'delivery_mode': 2}
-
-    # result=get_ec2_instances.apply_async(
-    #     args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region']), **queue_info)
+    instances = {}
+    result=get_ec2_instances.apply_async(
+         args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region']), **queue_info)
     #
-    # print("Task sent. Waiting for result...")
-    # print(result.get(timeout=30))
+    print("Task sent. Waiting for result...")
+    print(result.get(timeout=30))
     namespace="testCluster"
     min:int=2
     max:int=2
@@ -44,22 +44,22 @@ def main():
     # response= result.get(timeout=30)
     # instances={}
     # print(min_max_tags['MaxCount'])
-    # print(response)
+    # #print(response)
     # for i in range(int(min_max_tags['MaxCount'])):
     #     instances[response['Instances'][i]['PrivateDnsName']]={'IpAddress':response['Instances'][i]['PrivateIpAddress'],'InstanceId':response['Instances'][i]['InstanceId'],'NameSpace':namespace,'InstanceType':response['Instances'][i]['InstanceType']}
     # print(instances)
     # for k,v in instances.items():
     #     rd.save_node(k,v)
 
-    #time.sleep(50)
 
     ### Terminate nodes
-    instances_to_terminate=rd.get_instance_ids_namespace(namespace)
-    print(instances_to_terminate)
-    result = terminate_worker_node.apply_async(args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],instances_to_terminate),**queue_info)
-    response = result.get(timeout=30)
-    print(response)
-#print(str(response))
+    # instances_to_terminate=rd.get_instance_ids_namespace(namespace)
+    # print(instances_to_terminate)
+    # result = terminate_worker_node.apply_async(args=(aws_config['aws_access_key_id'], aws_config['aws_secret_access_key'], aws_config['region'],instances_to_terminate),**queue_info)
+    # response = result.get(timeout=30)
+    # rd.delete_instance_ids(instances_to_terminate)
+    # print(response)
+
 
 
 

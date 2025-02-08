@@ -67,7 +67,7 @@ class _UtilitiesExtension:
         return hmac_object.hexdigest()[:size]
 
     @log_to_file(logger)
-    def encode_hostname_with_key(self, hostname: str = None, size: int = 24, hash_algorithm='sha256', ) -> str:
+    def encode_hostname_with_key(self, hostname: str = None, size: int = 48, hash_algorithm='sha256', ) -> str:
         """
         Encodes the hostname using the provided key and a hash algorithm.
 

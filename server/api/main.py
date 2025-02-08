@@ -30,18 +30,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Fake users database
-fake_users_db = {
-    "user": {
-        "username": "user",
-        "hashed_password": ue.encode_phrase_with_key('password')
-    }
-}
+#
 
 # Celery Configuration
 celery = Celery(
     "worker",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0"
+    broker="rediss://localhost:6379/0?ssl_cert_reqs=required&ssl_ca_certs=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fca.crt&ssl_certfile=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fclient.crt&ssl_keyfile=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fclient.key",
+    backend="rediss://localhost:6379/0?ssl_cert_reqs=required&ssl_ca_certs=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fca.crt&ssl_certfile=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fclient.crt&ssl_keyfile=%2FUsers%2Fkrishnareddy%2FPycharmProjects%2Fbaks%2Fconfig%2Fssl%2Fclient.key"
+
 )
 
 # Authenticate User
@@ -81,8 +77,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return username
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail="Invalid token") from e
 
 # Post a Celery Task
 @app.post("/tasks/")

@@ -5,7 +5,7 @@ from utils.singleton import Singleton
 
 
 class _LogKCld(object):
-    read_config = rc("/Users/krishnareddy/PycharmProjects/kobraCldSS")
+    read_config = rc("/Users/krishnareddy/PycharmProjects/baks")
     logging_config = read_config.logging_config
     # name="my_app"
     log_file = logging_config['file_path']
