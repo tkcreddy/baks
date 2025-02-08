@@ -30,7 +30,7 @@ async def health_check_task(cluster_name:str, max_concurrency=100):
             logger.info(f"Checking: {url}")
             ht=HcTrack(host='localhost', port=6379,db=1)
             async with session.get(url, timeout=5,allow_redirects=False,verify_ssl=False) as response:
-                print(str(response.status))
+                print(response.status)
                 if response.status == 200:
                     status='healthy'
                     ht.track_consecutive_failures(url, status, 60)
