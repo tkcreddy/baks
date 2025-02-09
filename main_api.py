@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks,Depends
+from fastapi import FastAPI, HTTPException,Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from utils.ReadConfig import ReadConfig as rc
+from utils.celery.celery_config import celery_app
 from utils.celery.tasks.aws_tasks import get_ec2_instances, create_worker_nodes, terminate_worker_node
 from utils.extensions.utilities_extention import UtilitiesExtension
 from kombu import Exchange
@@ -37,6 +38,8 @@ rd = RedisInterface(
 SECRET_KEY = key_read['key']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is required!")
 
 # Queue Information
 queue_info = {
@@ -46,21 +49,21 @@ queue_info = {
     'delivery_mode': 2
 }
 
-@log_to_file(logger)
+#@log_to_file(logger)
 def authenticate_user(username: str, password: str):
     if not rd.get_user_pass(username):
         return False
     if ue.encode_phrase_with_key(password) == rd.get_user_pass(username):
         return username
 
-@log_to_file(logger)
+#@log_to_file(logger)
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode["exp"] = expire
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@log_to_file(logger)
+#@log_to_file(logger)
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
@@ -75,7 +78,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 #Dependency to get the current user
-@log_to_file(logger)
+#@log_to_file(logger)
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -105,9 +108,12 @@ class CreateInstanceRequest(BaseModel):
 class TerminateInstanceRequest(BaseModel):
     namespace: str
 
-@log_to_file(logger)
+class TaskId(BaseModel):
+    task_id: str
+
+#@log_to_file(logger)
 @app.post("/create-instances/")
-async def create_instances(request: CreateInstanceRequest, background_tasks: BackgroundTasks):
+async def create_instances(request: CreateInstanceRequest,user: str = Depends(get_current_user)):
     """
     API endpoint to create AWS EC2 instances via a Celery task.
     """
@@ -131,17 +137,15 @@ async def create_instances(request: CreateInstanceRequest, background_tasks: Bac
             **queue_info
         )
 
-        # Add background task to monitor result
-        background_tasks.add_task(monitor_task, task.id, request.namespace, request.max_count)
 
         return {"message": "Task submitted successfully", "task_id": task.id}
     except Exception as e:
         logger.error(f"Error submitting create_instances task: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit task") from e
 
-@log_to_file(logger)
+#@log_to_file(logger)
 @app.post("/terminate-namespace/")
-async def terminate_namespace(request: TerminateInstanceRequest):
+async def terminate_namespace(request: TerminateInstanceRequest,user: str = Depends(get_current_user)):
     """
     API endpoint to terminate AWS EC2 instances via a Celery task.
     """
@@ -169,7 +173,7 @@ async def terminate_namespace(request: TerminateInstanceRequest):
         logger.error(f"Error submitting terminate_instances task: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit task") from e
 
-@log_to_file(logger)
+#@log_to_file(logger)
 async def monitor_task(task_id: str, namespace: str, max_count: int):
     """
     Background task to monitor the Celery task result and save instances to Redis.
@@ -191,6 +195,19 @@ async def monitor_task(task_id: str, namespace: str, max_count: int):
 
     except Exception as e:
         logger.error(f"Error in monitoring task {task_id}: {e}")
+
+#@log_to_file(logger)
+@app.get("/task/{task_id}")
+async def get_task_status(task_id: str,user: str = Depends(get_current_user)):
+    """Fetches Celery task execution details from Redis."""
+    task = celery_app.AsyncResult(task_id)
+
+    return {
+        "task_id": task.id,
+        "status": task.status,
+        "result": task.result if task.ready() else None,
+        "progress": task.info if task.state == "PROGRESS" else None,
+    }
 
 
 if __name__ == "__main__":
