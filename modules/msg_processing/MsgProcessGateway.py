@@ -49,10 +49,10 @@ class MsgProcess():
             else:
                 print("Error: Empty JSON data")
 
-            # result['hostname'] = osutils.uname()
+            # result['hostname'] = os.uname()
             # # Execute the OS command
-            # result['cpu_count'] = osutils.cpu_count()
-            # result['Total_memory'] = osutils.sysconf("SC_PAGE_SIZE") * osutils.sysconf("SC_PHYS_PAGES")/(1024*1024*1024)
+            # result['cpu_count'] = os.cpu_count()
+            # result['Total_memory'] = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")/(1024*1024*1024)
             # result = subprocess.run(command, shell=True, check=True, capture_output=True)
             # print('Command executed successfully. Output:', result.stdout.decode('utf-8'))
         except subprocess.CalledProcessError as e:
