@@ -4,7 +4,7 @@ from json import dumps
 from socket import gethostname
 from utils.ReadConfig import ReadConfig as rc
 from utils.extensions.utilities_extention import UtilitiesExtension
-from utils.redis.hc_get_name_urls import get_urls_with_cluster
+#from utils.redis.hc_get_name_urls import get_urls_with_cluster
 cluster_name='cluster_1'
 url_list = [
     "https://www.google.com",

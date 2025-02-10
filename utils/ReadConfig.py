@@ -60,7 +60,7 @@ class _ReadConfig:
         return self._config_data['redis_db']
     @property
     def redis_queue_config(self):
-        return self._config_data['redis_queue_config']
+        return self._config_data['redis_queue']
 
 class ReadConfig(_ReadConfig, metaclass=Singleton):
     pass

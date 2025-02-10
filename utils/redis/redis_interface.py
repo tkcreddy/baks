@@ -188,51 +188,17 @@ class RedisInterface:
     def get_healthy_containers(self, cluster):
         return self.redis_client.smembers(f"healthy_containers:{cluster}")
 
+    @log_to_file(logger)
+    def save_url_cluster(self, url, cluster):
+        self.redis_client.hset("url_to_cluster", url, cluster)
 
-#
-# # Usage Example
-redis_manager = RedisInterface()
-#
-# # Store Nodes
-# redis_manager.save_node("node1", "192.168.1.1")
-# redis_manager.save_node("node2", "192.168.1.2")
-#
-# # Store Containers
-# redis_manager.save_container("container1", "10.0.0.1", "node1")
-# redis_manager.save_container("container2", "10.0.0.2", "node2")
-#
-# # Namespace to Node Mapping
-# redis_manager.save_namespace_mapping("namespace1", "node1")
-# redis_manager.save_namespace_mapping("namespace2", "node2")
-#
-# # Container to Cluster Mapping
-# redis_manager.save_container_cluster("container1", "cluster1")
-# redis_manager.save_container_cluster("container2", "cluster2")
-#
-# # Cluster Health Configuration
-# redis_manager.save_cluster_health("cluster1", 8080, "http://cluster1/health", 30, 3)
-# redis_manager.save_cluster_health("cluster2", 9090, "http://cluster2/health", 60, 5)
-#
-# # Add Healthy Containers
-# redis_manager.add_healthy_container("cluster1", "container1")
-# redis_manager.add_healthy_container("cluster2", "container2")
-#
-# # Retrieve Data
-# print("Nodes:", redis_manager.get_nodes())
-# print("Containers:", redis_manager.get_containers())
-# print("Namespace Mappings:", redis_manager.get_namespace_mappings())
-# print("Container Clusters:", redis_manager.get_container_clusters())
-# print("Cluster Health Config:", redis_manager.get_cluster_health())
-# print("Healthy Containers in Cluster1:", redis_manager.get_healthy_containers("cluster1"))
+    @log_to_file(logger)
+    def get_url_cluster(self,cluster):
+        url_list=[]
+        try:
+            url_data=self.redis_client.hgetall("url_to_cluster")
+            url_list.extend(name for name, data in url_data.items() if data == cluster)
+        except Exception as e:
+            print(f"Error: {e}")
+        return url_list
 
-
-# redis_manager.save_node_config("t2.nano", 1, 0.5)
-# redis_manager.save_node_config("t2.micro", 1, 1)
-# redis_manager.save_node_config("t2.small", 1, 2)
-# redis_manager.save_node_config("t2.medium", 2, 4)
-# redis_manager.save_node_config("t3.nano", 2, 0.5)
-# redis_manager.save_node_config("t3.micro", 2, 1)
-# redis_manager.save_node_config("t3.small", 2, 2)
-# redis_manager.save_node_config("t3.medium", 2, 4)
-# redis_manager.save_node_config("c1.medium", 2, 1.7)
-# redis_manager.save_node_config("c3.large", 2, 3.75)
