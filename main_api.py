@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from utils.ReadConfig import ReadConfig as rc
 from utils.celery.celery_config import celery_app
+from utils.celery.tasks.worker_node_tasks import  *
 from utils.celery.tasks.aws_tasks import get_ec2_instances, create_worker_nodes, terminate_worker_node
 from utils.extensions.utilities_extention import UtilitiesExtension
 from kombu import Exchange
@@ -42,7 +43,7 @@ if not SECRET_KEY:
     raise ValueError("SECRET_KEY is required!")
 
 # Queue Information
-queue_info = {
+aws_queue_info = {
     'exchange': Exchange('secure_exchange', type='direct'),
     'queue': ue.encode_hostname_with_key('aws_interface'),
     'routing_key': ue.encode_hostname_with_key('aws_interface'),
@@ -111,6 +112,8 @@ class TerminateInstanceRequest(BaseModel):
 class TaskId(BaseModel):
     task_id: str
 
+class HostName(BaseModel):
+    host_name: str
 #@log_to_file(logger)
 @app.post("/create-instances/")
 async def create_instances(request: CreateInstanceRequest,user: str = Depends(get_current_user)):
@@ -134,7 +137,7 @@ async def create_instances(request: CreateInstanceRequest,user: str = Depends(ge
                 'MinCount': request.min_count,
                 'MaxCount': request.max_count
             },
-            **queue_info
+            **aws_queue_info
         )
 
 
@@ -164,7 +167,7 @@ async def terminate_namespace(request: TerminateInstanceRequest,user: str = Depe
                 aws_config['region'],
                 instances_to_terminate,
             ),
-            **queue_info
+            **aws_queue_info
         )
 
         # Return task status
@@ -199,7 +202,7 @@ async def monitor_task(task_id: str, namespace: str, max_count: int):
 #@log_to_file(logger)
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str,user: str = Depends(get_current_user)):
-    """Fetches Celery task execution details from Redis."""
+
     task = celery_app.AsyncResult(task_id)
 
     return {
@@ -208,6 +211,24 @@ async def get_task_status(task_id: str,user: str = Depends(get_current_user)):
         "result": task.result if task.ready() else None,
         "progress": task.info if task.state == "PROGRESS" else None,
     }
+
+@app.get("/get_worker_node_data/")
+async def get_worker_node_data(request: HostName, user: str = Depends(get_current_user)):
+    host_queue_info = {
+        'exchange': Exchange('secure_exchange', type='direct'),
+        'queue': ue.encode_hostname_with_key(request.host_name),
+        'routing_key': ue.encode_hostname_with_key(request.host_name),
+        'delivery_mode': 2
+    }
+    try:
+        task = get_worker_node_info.apply_async(
+                args=(),
+                **host_queue_info
+            )
+        return {"message": "Task submitted successfully", "task_id": task.id}
+    except Exception as e:
+        logger.error(f"Error submitting get_host_system_info task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit task") from e
 
 
 if __name__ == "__main__":
