@@ -18,6 +18,16 @@ def get_worker_node_info():
         print(f"erroring with {err}")
     finally:
         return response_data
+@celery_app.task
+@log_to_file(logger)
+def get_host_ip():
+    response_data=""
+    try:
+        response_data = host_ip()
+    except Exception as err:
+        print(f"error in get_host_ip with {err}")
+
+    return response_data
 
 
 

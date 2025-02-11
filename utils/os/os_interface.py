@@ -23,6 +23,9 @@ def get_system_info() -> dict:
         'Version': platform.version(),
         'Machine': platform.machine(),
         'Processor': platform.processor(),
+        'cpu_count': os.cpu_count(),
+        'Memory': os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / (1024 * 1024 * 1024)
+
     }
 
 
@@ -32,21 +35,18 @@ def command_execute(command):
     return os.system(command)
 
 
-def hostname(self):
-    self.host=socket.gethostname()
-    return  self.host
+def host_name():
+    host=socket.gethostname()
+    return  host
 
-def hostip(self):
-    self.ip=socket.gethostbyname(socket.gethostname())
-    return self.ip
+def host_ip():
+    ip=socket.gethostbyname(socket.gethostname())
+    return ip
 
-def hoststring(self):
-    self.host_data= ''.join([self.host, self.ip])
-    return self.host_data
+def host_string():
+    host_data= ''.join([host_name(), host_ip()])
+    return host_data
 
-def host_string(self):
-    self.host_data= '_'.join([self.host, self.ip])
-    return self.host_data
 
 class OsMetricsCmd:
 
