@@ -29,5 +29,14 @@ def get_host_ip():
 
     return response_data
 
+@celery_app.task
+@log_to_file(logger)
+def get_usage():
+    response_data=""
+    try:
+        response_data = get_system_usage()
+    except Exception as err:
+        print(f"error in getting usage with {err}")
+    return response_data
 
 

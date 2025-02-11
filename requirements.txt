@@ -12,8 +12,9 @@ redis
 httpx
 redis-om
 fastapi
-jwt
+#jwt
 passlib
 uvicorn
 bcrypt
+psutil
 #celery-beat

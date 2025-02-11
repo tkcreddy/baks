@@ -248,6 +248,25 @@ async def get_worker_node_ip(request: HostName, user: str = Depends(get_current_
         logger.error(f"Error submitting host_ip task: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit task") from e
 
+@app.get("/get_worker_usage_data/")
+async def get_worker_usage_data(request: HostName, user: str = Depends(get_current_user)):
+    host_queue_info = {
+        'exchange': Exchange('secure_exchange', type='direct'),
+        'queue': ue.encode_hostname_with_key(request.host_name),
+        'routing_key': ue.encode_hostname_with_key(request.host_name),
+        'delivery_mode': 2
+    }
+    try:
+        task = get_usage.apply_async(
+                args=(),
+                **host_queue_info
+            )
+        return {"message": "Task submitted successfully", "task_id": task.id}
+    except Exception as e:
+        logger.error(f"Error submitting get_usage task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit task") from e
+
+
 
 if __name__ == "__main__":
     import uvicorn

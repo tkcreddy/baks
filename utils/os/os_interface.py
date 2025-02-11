@@ -4,6 +4,7 @@ from logpkg.log_kcld import LogKCld,log_to_file
 import platform
 import subprocess
 import socket
+import psutil
 logger = LogKCld()
 
 
@@ -24,11 +25,18 @@ def get_system_info() -> dict:
         'Machine': platform.machine(),
         'Processor': platform.processor(),
         'cpu_count': os.cpu_count(),
-        'Memory': os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / (1024 * 1024 * 1024)
-
+        'Memory': os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / (1024 * 1024 * 1024),
+        'Logical_cpu_count': psutil.cpu_count(logical=True),
+        'Physical_cpu_count': psutil.cpu_count(logical=False),
+        'Cpu_Frequency': psutil.cpu_freq()
     }
 
-
+@log_to_file(logger)
+def get_system_usage():
+    return { 'Cpu_usage': psutil.cpu_percent(interval=1, percpu=True),
+             'Virtual Memory': psutil.virtual_memory(),
+            'Swap Memory': psutil.swap_memory()
+             }
 @log_to_file(logger)
 def command_execute(command):
     count = os.cpu_count()
