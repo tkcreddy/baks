@@ -33,13 +33,12 @@ def get_system_info() -> dict:
 
 @log_to_file(logger)
 def get_system_usage():
-    return { 'Cpu_usage': psutil.cpu_percent(interval=1, percpu=True),
+    return { 'Cpu_usage': psutil.cpu_percent( percpu=True),
              'Virtual Memory': psutil.virtual_memory(),
             'Swap Memory': psutil.swap_memory()
              }
 @log_to_file(logger)
 def command_execute(command):
-    count = os.cpu_count()
     return os.system(command)
 
 
